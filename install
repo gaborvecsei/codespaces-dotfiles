@@ -1,0 +1,64 @@
+#! /bin/sh
+
+##### Basic Setup #####
+
+if [ -z "$USER" ]; then
+    USER=$(id -un)
+fi
+
+echo >&2 "====================================================================="
+echo >&2 " Setting up codespaces environment"
+echo >&2 ""
+echo >&2 " USER        $USER"
+echo >&2 " HOME        $HOME"
+echo >&2 "====================================================================="
+
+mkdir $HOME/Applications
+
+cd $HOME
+
+# Make passwordless sudo work
+export SUDO_ASKPASS=/bin/true
+
+##### Tmux #####
+
+sudo apt-get install -y tmux
+
+##### ZSH #####
+
+# Remove unnecessary setup
+rm -rf .oh-my-bash
+rm -rf .oh-my-zsh
+rm .zshrc
+
+# Set ZSH as default shell
+sudo chsh -s /usr/bin/zsh $USER
+
+# Install Antigen
+curl -L git.io/antigen > $HOME/antigen.zsh
+
+##### NeoVim #####
+
+# Install NVim
+NVIM_VERSION=0.7.0
+sudo apt-get install -y libfuse2
+curl -L -o $HOME/Applications/nvim https://github.com/neovim/neovim/releases/download/v${NVIM_VERSION}/nvim.appimage
+chmod a+x $HOME/Applications/nvim
+
+# Installing NodeJS for coc-vim
+curl -sL install-node.vercel.app/lts | sudo bash -s -- -y
+
+# Installing Vim-Plug
+sh -c 'curl -fLo "${XDG_DATA_HOME:-$HOME/.local/share}"/nvim/site/autoload/plug.vim --create-dirs \
+       https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim'
+
+##### Dotfiles #####
+
+git clone https://github.com/gaborvecsei/dotfiles-and-config.git --recurse-submodules
+cd $HOME/dotfiles-and-config
+./link_dotfiles.sh -t personal
+
+##### NeoVim Plugins setup #####
+
+./auto_update.sh
+
